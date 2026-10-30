@@ -4,12 +4,13 @@ import datetime
 
 s3 = boto3.client('s3')
 
-BUCKET_NAME = 'getfitdatabase-339713187152-us-east-2-an'  # Replace with your S3 bucket name
+BUCKET_NAME = 'getfitdatabase-339713187152-us-east-2-an'
 
 def lambda_handler(event, context):
     # Extract request info
     http_method = event.get('httpMethod') or event.get('requestContext', {}).get('http', {}).get('method', 'UNKNOWN')
     path = event.get('path') or event.get('rawPath', '/')
+    request_body = json.parsevent.get('body') or '{}'
 
     body = {
         "plan": {
@@ -44,6 +45,6 @@ def lambda_handler(event, context):
         "body": json.dumps({
             "message": "Hello, World!",
             "saved_to": f"s3://{BUCKET_NAME}/{object_key}",
-            "senderBody": f"/{event}"
+            "senderBody": request_body
         })
     }

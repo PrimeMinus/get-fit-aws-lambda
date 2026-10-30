@@ -17,9 +17,5 @@ def lambda_handler(event, context):
             "Content-Type": "application/json",
             "Access-Control-Allow-Origin": "*"
         },
-        "body": json.dumps({
-            "message": "Hello, World!",
-            "saved_to": f"s3://{BUCKET_NAME}/{object_key}",
-            "senderBody": f"/{event}"
-        })
+        "body": json.dumps(body)
 }
