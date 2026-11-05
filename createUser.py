@@ -10,7 +10,23 @@ def lambda_handler(event, context):
     # Extract request info
     http_method = event.get('httpMethod') or event.get('requestContext', {}).get('http', {}).get('method', 'UNKNOWN')
     path = event.get('path') or event.get('rawPath', '/')
-    request_body = json.parsevent.get('body') or '{}'
+    raw_body = event.get('body') or '{}'
+    try:
+        request_body = json.loads(raw_body) if isinstance(raw_body, str) else raw_body
+    except json.JSONDecodeError:
+        return {
+            "statusCode": 400,
+            "headers": {"Content-Type": "application/json"},
+            "body": json.dumps({"message": "Request body must be valid JSON"})
+        }
+
+    username = request_body.get("username") if isinstance(request_body, dict) else None
+    if not isinstance(username, str) or not username.strip():
+        return {
+            "statusCode": 400,
+            "headers": {"Content-Type": "application/json"},
+            "body": json.dumps({"message": "A non-empty username is required"})
+        }
 
     body = {
         "plan": {
@@ -26,8 +42,8 @@ def lambda_handler(event, context):
         "logHistory": []
     }
 
-    # Write the request details to S3 with a timestamped key
-    object_key = f"users/user1.json"
+    # Write the user record to S3 using the username as the key
+    object_key = f"users/{username}.json"
     s3.put_object(
         Bucket=BUCKET_NAME,
         Key=object_key,
@@ -43,8 +59,6 @@ def lambda_handler(event, context):
             "Access-Control-Allow-Origin": "*"
         },
         "body": json.dumps({
-            "message": "Hello, World!",
-            "saved_to": f"s3://{BUCKET_NAME}/{object_key}",
-            "senderBody": request_body
+            "message": "User created"
         })
     }
