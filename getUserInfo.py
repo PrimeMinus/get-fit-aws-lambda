@@ -1,12 +1,18 @@
 import json
 import boto3
-import datetime
 
-BUCKET_NAME = 'getfitdatabase-339713187152-us-east-2-an'  # Replace with your S3 bucket name
 s3 = boto3.client('s3')
 
+BUCKET_NAME = 'getfitdatabase-339713187152-us-east-2-an'
+
+# Define expected structure of request body
+schema = {
+    "username": str
+}
+
 def lambda_handler(event, context):
-    # Same object within create user, get objet from the same bucket, and loading the information stored
+
+    # Parse request body
     raw_body = event.get('body') or '{}'
     try:
         request_body = json.loads(raw_body) if isinstance(raw_body, str) else raw_body
@@ -17,22 +23,39 @@ def lambda_handler(event, context):
             "body": json.dumps({"message": "Request body must be valid JSON"})
         }
 
-    username = request_body.get("username") if isinstance(request_body, dict) else None
-    if not isinstance(username, str) or not username.strip():
+    # Verify that request body matches schema
+    if not matches_structure(request_body, schema):
         return {
             "statusCode": 400,
             "headers": {"Content-Type": "application/json"},
-            "body": json.dumps({"message": "A non-empty username is required"})
+            "body": json.dumps({"message": "Request body JSON must conform to schema"})
         }
-    object_key = f"users/{username}.json"
+
+    # Get user's json from S3
+    object_key = f"users/{request_body["username"]}.json"
     response = s3.get_object(Bucket=BUCKET_NAME, Key=object_key)
-    body = json.loads(response['Body'].read().decode('utf-8'))
-    # Return response to the gateway
+    data = json.loads(response['Body'].read())
+
+    # Return 200
     return {
         "statusCode": 200,
         "headers": {
             "Content-Type": "application/json",
             "Access-Control-Allow-Origin": "*"
         },
-        "body": json.dumps(body)
-}
+        "body": json.dumps(data)
+    }
+
+# Helper function to check if json matches schema
+def matches_structure(data, schema):
+    if isinstance(schema, dict):
+        return (
+            isinstance(data, dict)
+            and data.keys() == schema.keys()
+            and all(
+                matches_structure(data[key], value)
+                for key, value in schema.items()
+            )
+        )
+
+    return type(data) == schema

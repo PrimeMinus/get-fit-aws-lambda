@@ -79,10 +79,11 @@ def matches_structure(data, schema):
     if isinstance(schema, dict):
         return (
             isinstance(data, dict)
+            and data.keys() == schema.keys()
             and all(
-                key in data and matches_structure(data[key], value)
+                matches_structure(data[key], value)
                 for key, value in schema.items()
             )
         )
 
-    return isinstance(data, schema)
+    return type(data) == schema
