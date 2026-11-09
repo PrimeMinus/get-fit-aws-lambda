@@ -6,10 +6,14 @@ s3 = boto3.client('s3')
 
 BUCKET_NAME = 'getfitdatabase-339713187152-us-east-2-an'
 
+# Define expected structure of request body
+schema = {
+    "username": str
+}
+
 def lambda_handler(event, context):
-    # Extract request info
-    http_method = event.get('httpMethod') or event.get('requestContext', {}).get('http', {}).get('method', 'UNKNOWN')
-    path = event.get('path') or event.get('rawPath', '/')
+
+    # Parse request body
     raw_body = event.get('body') or '{}'
     try:
         request_body = json.loads(raw_body) if isinstance(raw_body, str) else raw_body
@@ -20,12 +24,22 @@ def lambda_handler(event, context):
             "body": json.dumps({"message": "Request body must be valid JSON"})
         }
 
-    username = request_body.get("username") if isinstance(request_body, dict) else None
-    if not isinstance(username, str) or not username.strip():
+    # Verify that request body matches schema
+    if not matches_structure(request_body, schema):
         return {
             "statusCode": 400,
             "headers": {"Content-Type": "application/json"},
-            "body": json.dumps({"message": "A non-empty username is required"})
+            "body": json.dumps({"message": "Request body JSON must conform to schema"})
+        }
+
+    # Validate username
+    # TODO: Add validation that username conforms to some standard (no spaces and such)
+    username = request_body["username"]
+    if username == "":
+        return {
+            "statusCode": 400,
+            "headers": {"Content-Type": "application/json"},
+            "body": json.dumps({"message": "username cannot be empty"})
         }
 
     body = {
@@ -62,3 +76,17 @@ def lambda_handler(event, context):
             "message": "User created"
         })
     }
+
+# Helper function to check if json matches schema
+def matches_structure(data, schema):
+    if isinstance(schema, dict):
+        return (
+            isinstance(data, dict)
+            and data.keys() == schema.keys()
+            and all(
+                matches_structure(data[key], value)
+                for key, value in schema.items()
+            )
+        )
+
+    return type(data) == schema
