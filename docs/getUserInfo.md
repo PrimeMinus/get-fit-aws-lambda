@@ -1,17 +1,11 @@
 # Get User
 
 ## URL
-GET /account
+GET /account/`username`
 
 ## Description
-Gets the specified user's file
-
-## Request Body
-```
-{
-    "username": str
-}
-```
+Gets the specified user's file. This endpoint is different in that it does not have a request body, instead the username is in the URL.
+So, to access the account with username "johndoe" you use `/account/johndoe`
 
 ## Response
 ```
