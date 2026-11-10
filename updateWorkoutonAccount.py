@@ -5,42 +5,81 @@ s3 = boto3.client('s3')
 
 BUCKET_NAME = 'getfitdatabase-339713187152-us-east-2-an'
 
+# Define expected structure of request body
+schema = {
+    "username": str,
+    "index": int,
+    "workout": {
+            "equipment": str,
+            "weight": float,
+            "reps": int
+        }
+}
+
 def lambda_handler(event, context):
 
-    request_body = json.loads(event.get('body') or '{}')
+    # Parse request body
+    raw_body = event.get('body') or '{}'
+    try:
+        request_body = json.loads(raw_body) if isinstance(raw_body, str) else raw_body
+    except json.JSONDecodeError:
+        return {
+            "statusCode": 400,
+            "headers": {"Content-Type": "application/json"},
+            "body": json.dumps({"message": "Request body must be valid JSON"})
+        }
 
-    username = request_body.get("username")
-    index = request_body.get("index")
-    updateWorkout = request_body.get("workout")
+    # Verify that request body matches schema
+    if not matches_structure(request_body, schema):
+        return {
+            "statusCode": 400,
+            "headers": {"Content-Type": "application/json"},
+            "body": json.dumps({"message": "Request body JSON must conform to schema"})
+        }
 
-    object_key = f"users/{username}.json"
-
+    # Get user's json from S3
+    object_key = f"users/{request_body["username"]}.json"
     response = s3.get_object(Bucket=BUCKET_NAME, Key=object_key)
     data = json.loads(response['Body'].read())
 
-    if index is None or not isinstance(index, int) or index < 0 or index >= len(data["logHistory"]):
-        return {
-            "statusCode": 400,
-            "headers": {
-                "Content-Type": "application/json",
-                "Access-Control-Allow-Origin": "*"
-            },
-            "body": json.dumps({"message": "Invalid workout index"})
-        }
+    # Edit workout at index in account
+    index = request_body["index"]
+    workout = data["logHistory"][index]
+    workout["equipment"] = request_body["workout"]["equipment"]
+    workout["weight"] = request_body["workout"]["weight"]
+    workout["reps"] = request_body["workout"]["reps"]
 
-    data["logHistory"][index].update(updateWorkout)
-
+    # store updated file back in S3
     s3.put_object(
         Bucket=BUCKET_NAME,
         Key=object_key,
-        Body=json.dumps(data)
+        Body= json.dumps(data)
     )
 
+    # Return 200
     return {
-    "statusCode": 200,
-    "headers": {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*"
-    },
-    "body": json.dumps(data)
-}
+        "statusCode": 200,
+        "headers": {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*"
+        },
+        "body": json.dumps(
+            {
+                "message": "Workout edited"
+            }
+        )
+    }
+
+# Helper function to check if json matches schema
+def matches_structure(data, schema):
+    if isinstance(schema, dict):
+        return (
+            isinstance(data, dict)
+            and data.keys() == schema.keys()
+            and all(
+                matches_structure(data[key], value)
+                for key, value in schema.items()
+            )
+        )
+
+    return type(data) == schema
