@@ -42,6 +42,14 @@ def lambda_handler(event, context):
     response = s3.get_object(Bucket=BUCKET_NAME, Key=object_key)
     data = json.loads(response['Body'].read())
 
+    # Verify a workout exists at given index
+    if request_body["index"] < 0 or request_body["index"] >= len(data["logHistory"]):
+        return {
+            "statusCode": 400,
+            "headers": {"Content-Type": "application/json"},
+            "body": json.dumps({"message": "No workout exists at given index"})
+        }
+
     # Edit workout at index in account
     index = request_body["index"]
     workout = data["logHistory"][index]
