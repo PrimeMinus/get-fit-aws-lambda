@@ -1,39 +1,40 @@
 import json
 import boto3
+from botocore.exceptions import ClientError
 
 s3 = boto3.client('s3')
 
 BUCKET_NAME = 'getfitdatabase-339713187152-us-east-2-an'
 
-# Define expected structure of request body
-schema = {
-    "username": str
-}
 
 def lambda_handler(event, context):
 
-    # Parse request body
-    raw_body = event.get('body') or '{}'
-    try:
-        request_body = json.loads(raw_body) if isinstance(raw_body, str) else raw_body
-    except json.JSONDecodeError:
-        return {
-            "statusCode": 400,
-            "headers": {"Content-Type": "application/json"},
-            "body": json.dumps({"message": "Request body must be valid JSON"})
-        }
-
-    # Verify that request body matches schema
-    if not matches_structure(request_body, schema):
-        return {
-            "statusCode": 400,
-            "headers": {"Content-Type": "application/json"},
-            "body": json.dumps({"message": "Request body JSON must conform to schema"})
-        }
+    # Get params from request URL
+    username = event["pathParameters"]["username"]
 
     # Get user's json from S3
-    object_key = f"users/{request_body["username"]}.json"
-    response = s3.get_object(Bucket=BUCKET_NAME, Key=object_key)
+    object_key = f"users/{username}.json"
+
+    # If user doesn't exist, return 404
+    try:
+        response = s3.get_object(Bucket=BUCKET_NAME, Key=object_key)
+    except ClientError as e:
+        error_code = e.response['Error']['Code']
+
+        if error_code in ['404', 'NoSuchKey', 'NotFound']:
+            return {
+                "statusCode": 404,
+                "headers": {
+                    "Content-Type": "application/json",
+                    "Access-Control-Allow-Origin": "*"
+                },
+                "body": json.dumps({
+                    "message": "User not found"
+                })
+            }
+
+        raise
+
     data = json.loads(response['Body'].read())
 
     # Return 200
@@ -45,17 +46,3 @@ def lambda_handler(event, context):
         },
         "body": json.dumps(data)
     }
-
-# Helper function to check if json matches schema
-def matches_structure(data, schema):
-    if isinstance(schema, dict):
-        return (
-            isinstance(data, dict)
-            and data.keys() == schema.keys()
-            and all(
-                matches_structure(data[key], value)
-                for key, value in schema.items()
-            )
-        )
-
-    return type(data) == schema
