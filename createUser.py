@@ -53,7 +53,12 @@ def lambda_handler(event, context):
             "currentWeight": 0,
             "currentHeight": 0
         },
-        "logHistory": []
+        "logs": {
+            "workout": [],
+            "dietary": [],
+            "weight": [],
+            "height": []
+        }
     }
 
     # Write the user record to S3 using the username as the key

@@ -38,7 +38,7 @@ def lambda_handler(event, context):
     data = json.loads(response['Body'].read())
 
     # Verify a workout exists at given index
-    if request_body["index"] < 0 or request_body["index"] >= len(data["logHistory"]):
+    if request_body["index"] < 0 or request_body["index"] >= len(data["logs"]["workout"]):
         return {
             "statusCode": 400,
             "headers": {"Content-Type": "application/json"},
@@ -46,7 +46,7 @@ def lambda_handler(event, context):
         }
 
     # Remove workout at given index
-    data["logHistory"].pop(request_body["index"])
+    data["logs"]["workout"].pop(request_body["index"])
 
     # store updated file back in S3
     s3.put_object(

@@ -9,13 +9,12 @@ BUCKET_NAME = 'getfitdatabase-339713187152-us-east-2-an'
 
 # Define expected structure of request body
 schema = {
-	"username": str,
-	"workout": 
-			{
-				"equipment": str,
-				"weight": float,
-				"reps": int
-			}
+    "username": str,
+    "workout": {
+        "equipment": str,
+        "weight": float,
+        "reps": int
+    }
 }
 
 def lambda_handler(event, context):
@@ -47,7 +46,7 @@ def lambda_handler(event, context):
     # Add workout to account
     newWorkout = request_body["workout"]
     newWorkout["timestamp"] = math.floor(datetime.datetime.now().timestamp())
-    data["logHistory"].append(newWorkout)
+    data["logs"]["workout"].append(newWorkout)
 
     # store updated file back in S3
     s3.put_object(

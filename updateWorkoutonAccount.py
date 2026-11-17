@@ -10,10 +10,10 @@ schema = {
     "username": str,
     "index": int,
     "workout": {
-            "equipment": str,
-            "weight": float,
-            "reps": int
-        }
+        "equipment": str,
+        "weight": float,
+        "reps": int
+    }
 }
 
 def lambda_handler(event, context):
@@ -40,10 +40,10 @@ def lambda_handler(event, context):
     # Get user's json from S3
     object_key = f"users/{request_body["username"]}.json"
     response = s3.get_object(Bucket=BUCKET_NAME, Key=object_key)
-    data = json.loads(response['Body'].read())
+    user_file = json.loads(response['Body'].read())
 
     # Verify a workout exists at given index
-    if request_body["index"] < 0 or request_body["index"] >= len(data["logHistory"]):
+    if request_body["index"] < 0 or request_body["index"] >= len(user_file["logs"]["workout"]):
         return {
             "statusCode": 400,
             "headers": {"Content-Type": "application/json"},
@@ -52,7 +52,7 @@ def lambda_handler(event, context):
 
     # Edit workout at index in account
     index = request_body["index"]
-    workout = data["logHistory"][index]
+    workout = user_file["logs"]["workout"][index]
     workout["equipment"] = request_body["workout"]["equipment"]
     workout["weight"] = request_body["workout"]["weight"]
     workout["reps"] = request_body["workout"]["reps"]
@@ -61,7 +61,7 @@ def lambda_handler(event, context):
     s3.put_object(
         Bucket=BUCKET_NAME,
         Key=object_key,
-        Body= json.dumps(data)
+        Body= json.dumps(user_file)
     )
 
     # Return 200
