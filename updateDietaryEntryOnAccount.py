@@ -1,0 +1,93 @@
+import json
+import boto3
+
+s3 = boto3.client('s3')
+
+BUCKET_NAME = 'getfitdatabase-339713187152-us-east-2-an'
+
+# Define expected structure of request body
+schema = {
+    "username": str,
+    "index": int,
+    "dietaryEntry": {
+        "name": str,
+        "protein": float,
+        "calories": int
+    }
+}
+
+def lambda_handler(event, context):
+
+    # Parse request body
+    raw_body = event.get('body') or '{}'
+    try:
+        request_body = json.loads(raw_body) if isinstance(raw_body, str) else raw_body
+    except json.JSONDecodeError:
+        return {
+            "statusCode": 400,
+            "headers": {"Content-Type": "application/json"},
+            "body": json.dumps({"message": "Request body must be valid JSON"})
+        }
+
+    # Verify that request body matches schema
+    if not matches_structure(request_body, schema):
+        return {
+            "statusCode": 400,
+            "headers": {"Content-Type": "application/json"},
+            "body": json.dumps({"message": "Request body JSON must conform to schema"})
+        }
+
+    # Get user's json from S3
+    object_key = f"users/{request_body["username"]}.json"
+    response = s3.get_object(Bucket=BUCKET_NAME, Key=object_key)
+    user_file = json.loads(response['Body'].read())
+
+    # Verify a dietary entry exists at given index
+    if request_body["index"] < 0 or request_body["index"] >= len(user_file["logs"]["dietary"]):
+        return {
+            "statusCode": 400,
+            "headers": {"Content-Type": "application/json"},
+            "body": json.dumps({"message": "No dietary entry exists at given index"})
+        }
+
+    # Edit dietary entry at index in account
+    index = request_body["index"]
+    entry = user_file["logs"]["dietary"][index]
+    entry["name"] = request_body["dietaryEntry"]["name"]
+    entry["protein"] = request_body["dietaryEntry"]["protein"]
+    entry["calories"] = request_body["dietaryEntry"]["calories"]
+
+    # store updated file back in S3
+    s3.put_object(
+        Bucket=BUCKET_NAME,
+        Key=object_key,
+        Body= json.dumps(user_file)
+    )
+
+    # Return 200
+    return {
+        "statusCode": 200,
+        "headers": {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*"
+        },
+        "body": json.dumps(
+            {
+                "message": "Dietary entry edited"
+            }
+        )
+    }
+
+# Helper function to check if json matches schema
+def matches_structure(data, schema):
+    if isinstance(schema, dict):
+        return (
+            isinstance(data, dict)
+            and data.keys() == schema.keys()
+            and all(
+                matches_structure(data[key], value)
+                for key, value in schema.items()
+            )
+        )
+
+    return type(data) == schema
