@@ -12,13 +12,13 @@ schema = {
     "newData": {
         "plan": {
             "startDate": str,
-            "goalWeight": int,
-            "startWeight": int,
+            "goalWeight": float,
+            "startWeight": float,
             "finishDate": str
         },
         "data": {
-            "currentWeight": int,
-            "currentHeight": int
+            "currentWeight": float,
+            "currentHeight": float
         }
     }
 }

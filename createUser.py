@@ -45,13 +45,13 @@ def lambda_handler(event, context):
     body = {
         "plan": {
             "startDate": "",
-            "goalWeight": 0,
-            "startWeight": 0,
+            "goalWeight": 0.0,
+            "startWeight": 0.0,
             "finishDate": ""
         },
         "data": {
-            "currentWeight": 0,
-            "currentHeight": 0
+            "currentWeight": 0.0,
+            "currentHeight": 0.0
         },
         "logs": {
             "workout": [],
