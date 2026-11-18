@@ -11,10 +11,10 @@ So, to access the account with username "johndoe" you use `/account/johndoe`
 ```
 {
     "plan": {
-        "startDate": str,
+        "startDate": int,
         "goalWeight": float,
         "startWeight": float,
-        "finishDate": str
+        "finishDate": int
     },
     "data": {
         "currentWeight": float,
