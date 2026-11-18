@@ -1,4 +1,5 @@
 import json
+import math
 import boto3
 import datetime
 
@@ -44,10 +45,10 @@ def lambda_handler(event, context):
 
     body = {
         "plan": {
-            "startDate": "",
+            "startDate": math.floor(datetime.datetime.now().timestamp()),
             "goalWeight": 0.0,
             "startWeight": 0.0,
-            "finishDate": ""
+            "finishDate": 0
         },
         "data": {
             "currentWeight": 0.0,
