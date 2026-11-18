@@ -7,26 +7,48 @@ GET /account/`username`
 Gets the specified user's file. This endpoint is different in that it does not have a request body, instead the username is in the URL.
 So, to access the account with username "johndoe" you use `/account/johndoe`
 
-## Response
+## Expected Response Structure
 ```
 {
     "plan": {
         "startDate": str,
-        "goalWeight": int,
-        "startWeight": int,
+        "goalWeight": float,
+        "startWeight": float,
         "finishDate": str
     },
     "data": {
-        "currentWeight": int,
-        "currentHeight": int
+        "currentWeight": float,
+        "currentHeight": float
     },
-    "logHistory": [
-        {
-            "equipment": str,
-            "weight": float,
-            "reps": int,
-            "timestamp": int
-        }
-    ]
+    "logs": {
+        "workout": [
+            {
+                "equipment": str,
+                "weight": float,
+                "reps": int,
+                "timestamp": int
+            }
+        ],
+        "dietary": [
+            {
+                "name": str,
+                "protein": float,
+                "calories": int,
+                "timestamp": int
+            }
+        ],
+        "weight": [
+            {
+                "weight": float
+                "timestamp": int
+            }
+        ],
+        "height": [
+            {
+                "height": float,
+                "timestamp": int
+            }
+        ]
+    }
 }
 ```
