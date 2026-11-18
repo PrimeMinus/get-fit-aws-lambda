@@ -5,7 +5,7 @@ PATCH /account
 
 ## Description
 Edits the details on the specified user's account.
-Does not modify workouts.
+Does not modify logs.
 
 ## Request Body
 ```
@@ -14,13 +14,13 @@ Does not modify workouts.
     "newData": {
         "plan": {
             "startDate": str,
-            "goalWeight": int,
-            "startWeight": int,
+            "goalWeight": float,
+            "startWeight": float,
             "finishDate": str
         },
         "data": {
-            "currentWeight": int,
-            "currentHeight": int
+            "currentWeight": float,
+            "currentHeight": float
         }
     }
 }
